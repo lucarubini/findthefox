@@ -38,7 +38,8 @@ if __name__ == '__main__':
     # Add arguments
     parser.add_argument('--size', type=int, default=4, help='Size of the NxN grid.')
     parser.add_argument('--n-runs', type=int, default=1, help='Number of runs of the game')
-    parser.add_argument('--init-strategy', type=str, default='empty', help='What is the initial setting of the grid')
+    parser.add_argument('--init-strategy', type=str, default='empty', help='What is the initial setting of the grid', \
+        choices=['diag_f', 'diag_o', 'diag_x', 'diag_reverse_f', 'diag_reverse_o', 'diag_reverse_x', 'empty'])
     parser.add_argument('--log-match', action='store_true', help='Enable the flag to store in the ouptu folder (log_games) the games')
     parser.add_argument('--f-chr', type=int, default=50, help='Number of `f` char to sample')
     parser.add_argument('--o-chr', type=int, default=60, help='Number of `o` char to sample')
