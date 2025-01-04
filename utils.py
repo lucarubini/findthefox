@@ -1,4 +1,6 @@
 import random
+import pygame
+
 
 class FindFoxBoard:
     def __init__(self, size, init_strategy, bucket):
@@ -12,6 +14,12 @@ class FindFoxBoard:
     def build_board(self, size):
         board = [[" " for _ in range(size)] for _ in range(size)]
         return board
+
+    def available_cell(self, row, col):
+        if self.board[row][col] == " ":
+            return True
+        else:
+            return False
 
     def sample_char(self):
         # sample random char and update bucket
@@ -71,10 +79,10 @@ class FindFoxBoard:
         if __debug__:
             print('check_winner')
         # Check rows for a winner
-        for row in self.board:
+        for i, row in enumerate(self.board):
             tmpx = [row[i]+row[i+1]+row[i+2] for i in range(len(row)-2)]
             if __debug__:
-                print(f'check row: {tmpx}')
+                print(f'check row {i}: {tmpx}')
             found = [x for x in tmpx if x in ['fox','xof']]
             if len(found) > 0:
               return True
@@ -105,6 +113,8 @@ class FindFoxBoard:
           return True
         return False
 
+    def mark_cell(self, row, col, char):
+        self.board[row][col] = char
 
     # Main function to play the game
     def play_game_cli(self, output_folder, game_id):
@@ -131,11 +141,11 @@ class FindFoxBoard:
             #Filling strategy is to randomly pick a cell in the grid and a char from the remaining.
             random.shuffle(cells)
             row, col = cells.pop(0)
-            char_fox = self.sample_char()
 
-            if self.board[row][col] == " ":
-                self.board[row][col] = char_fox
-                self.bucket[char_fox] = self.bucket[char_fox] - 1
+            if self.available_cell(row, col):
+                sampled_char = self.sample_char()
+                self.mark_cell(row, col, sampled_char)
+                self.bucket[sampled_char] = self.bucket[sampled_char] - 1
             else:
                 if __debug__:
                     print(f"Cell ({row},{col}) already taken, try again.")
@@ -167,5 +177,57 @@ class FindFoxBoard:
             fout.close()
 
         return FOX_FOUND
+
+class FindFoxBoardGUI(FindFoxBoard):
+    def __init__(self, size, init_strategy, bucket):
+        super().__init__(size, init_strategy, bucket)
+        self.WIDTH=400
+        self.HEIGHT=400
+        self.LINE_WIDTH=15
+        self.LINE_COLOR= (23, 145, 135)
+        self.SQUARE_SIZE=self.WIDTH//size
+        self.CIRCLE_RADIUS=self.SQUARE_SIZE//3
+        self.CIRCLE_WIDTH=5
+        self.CROSS_WIDTH=5
+        self.CHAR_COLOR=(239, 231, 200)
+        self.SPACE = self.SQUARE_SIZE//4
+
+    def draw_o(self, screen, row, col):
+        pygame.draw.circle(screen, self.CHAR_COLOR, (int(col*self.SQUARE_SIZE+self.SQUARE_SIZE//2), int(row*self.SQUARE_SIZE + self.SQUARE_SIZE // 2)), self.CIRCLE_RADIUS, self.CIRCLE_WIDTH)
+
+    def draw_x(self, screen, row, col):
+        pygame.draw.line(screen, self.CHAR_COLOR, (col*self.SQUARE_SIZE+self.SPACE, row*self.SQUARE_SIZE+self.SPACE), (col*self.SQUARE_SIZE+self.SQUARE_SIZE-self.SPACE, row*self.SQUARE_SIZE+self.SQUARE_SIZE-self.SPACE), self.CROSS_WIDTH)
+        pygame.draw.line(screen, self.CHAR_COLOR, (col*self.SQUARE_SIZE+self.SPACE, row*self.SQUARE_SIZE+self.SQUARE_SIZE-self.SPACE), (col*self.SQUARE_SIZE+self.SQUARE_SIZE-self.SPACE, row*self.SQUARE_SIZE+self.SPACE), self.CROSS_WIDTH)
+
+    def draw_f(self, screen, row, col):
+        x0=col*self.SQUARE_SIZE+self.SPACE
+        y0=row*self.SQUARE_SIZE+self.SPACE
+        x1=col*self.SQUARE_SIZE+self.SPACE
+        y1=row*self.SQUARE_SIZE+3*self.SPACE
+        x2=col*self.SQUARE_SIZE+3*self.SPACE
+        y3=row*self.SQUARE_SIZE+2*self.SPACE
+        x3=col*self.SQUARE_SIZE+2*self.SPACE
+        pygame.draw.line(screen, self.CHAR_COLOR, (x0, y0), (x1, y1) , self.CROSS_WIDTH)
+        pygame.draw.line(screen, self.CHAR_COLOR, (x0, y0), (x2, y0) , self.CROSS_WIDTH)
+        pygame.draw.line(screen, self.CHAR_COLOR, (x0, y3), (x3, y3) , self.CROSS_WIDTH)
+
+    # Drawing functions
+    def draw_lines(self, screen):
+
+        for i in range(self.size-1):
+            # Horizontal lines
+            pygame.draw.line(screen, self.LINE_COLOR, (0, (i+1)*self.SQUARE_SIZE), (self.WIDTH, (i+1)*self.SQUARE_SIZE), self.LINE_WIDTH)
+            # Vertical lines
+            pygame.draw.line(screen, self.LINE_COLOR, ((i+1)*self.SQUARE_SIZE, 0), ((i+1)*self.SQUARE_SIZE, self.HEIGHT), self.LINE_WIDTH)
+
+    def draw_chars(self, screen):
+        for row in range(self.size):
+            for col in range(self.size):
+                if self.board[row][col] == 'f':
+                    self.draw_f(screen, row, col)
+                elif self.board[row][col] == 'o':
+                    self.draw_o(screen, row, col)
+                elif self.board[row][col] == 'x':
+                    self.draw_x(screen, row, col)
 
 
