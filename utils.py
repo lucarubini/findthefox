@@ -75,9 +75,6 @@ class FindFoxBoard:
                 self.bucket['x'] = self.bucket['x'] - 1
 
     def check_winner(self):
-        # check for a winner
-        if __debug__:
-            print('check_winner')
         # Check rows for a winner
         for i, row in enumerate(self.board):
             tmpx = [row[i]+row[i+1]+row[i+2] for i in range(len(row)-2)]
@@ -112,6 +109,36 @@ class FindFoxBoard:
         if any([x in ['fox','xof'] for x in tmp]):
           return True
         return False
+
+
+    def check_winner_index(self):
+        tmp_idx=[]
+        # Check rows for a winner
+        for i, row in enumerate(self.board):
+            tmp_rows = [((i,j),(i,j+1),(i,j+2)) for j in range(self.size-2)]
+            tmp_idx = tmp_idx + tmp_rows
+
+        # Check columns for a winner
+        for col in range(self.size):
+            tmp_cols = [((i,col),(i+1,col),(i+2,col)) for i in range(self.size-2)]
+            tmp_idx = tmp_idx + tmp_cols
+
+        # Check diagonals for a winner
+        for i in range(self.size-2):
+            #forward (in case of main diag they are the same)
+            tmp_p1f_idx = [((j,i+j),(j+1,i+j+1),(j+2,i+j+2)) for j in range(self.size-2-i)]
+            tmp_m1f_idx = [((i+j,j),(i+j+1,j+1),(i+j+2,j+2)) for j in range(self.size-2-i)]
+            #backward (in case of main diag they are the same)
+            tmp_p1b_idx = [((j,self.size-1-j-i),(j+1,self.size-1-j-i-1),(j+2,self.size-1-j-i-2)) for j in range(self.size-2-i)]
+            tmp_m1b_idx = [((j+i,self.size-1-j),(j+i+1,self.size-1-j-1),(j+i+2,self.size-1-j-2)) for j in range(self.size-2-i)]
+
+            tmp_idx = tmp_idx + tmp_p1f_idx + tmp_m1f_idx + tmp_p1b_idx + tmp_m1b_idx
+
+        for x0,x1,x2 in tmp_idx:
+            tmpx = self.board[x0[0]][x0[1]] + self.board[x1[0]][x1[1]] + self.board[x2[0]][x2[1]]
+            if tmpx in ['fox','xof']:
+                return True, (x0,x1,x2)
+        return False, None
 
     def mark_cell(self, row, col, char):
         self.board[row][col] = char
@@ -156,10 +183,16 @@ class FindFoxBoard:
                 fout.write(f'Turn: {turn_counter}\n')
                 fout.write(self.board2print())
 
-            if self.check_winner():
+            is_fox_found, fox_idxs = self.check_winner_index()
+
+            if is_fox_found:
                 FOX_FOUND=True
                 if __debug__:
                     print(f"FOX FOUND!")
+                    for xrow,ycol in fox_idxs:
+                        char_x = self.board[xrow][ycol]
+                        self.mark_cell(xrow, ycol, char_x.upper())
+
                     print(self.board2print())
                 if output_folder:
                     fout.write('==>FOX FOUND!')
